@@ -1,21 +1,17 @@
 # Azure DevOps Assignment – Symplique
 
-This repository demonstrates a serverless, scalable, and cost-effective archival and retrieval solution for billing records stored in Azure Cosmos DB. It uses **Azure Functions**, **Azure Blob Storage**, and **Terraform** for infrastructure automation.
+> A cost-optimized, serverless solution to archive billing records from Azure Cosmos DB to Azure Blob Storage after 90 days — with **zero downtime** and **no API changes**.
 
 ---
 
-## 📌 Problem Statement
+## 🧩 Problem & Solution
 
-The objective was to reduce costs and improve data lifecycle management for a Cosmos DB-based billing system storing millions of records.
-
-> 📄 [View the full problem statement here](https://gist.github.com/vikas-t/724da4a118612a8a8faf0acd5e4e4567)
-
-Key requirements included:
-
-- Archiving records older than 90 days to Azure Blob Storage.
-- Preserving API behavior without any breaking changes.
-- Ensuring zero downtime.
-- Automating deployment with Infrastructure as Code (IaC).
+- **Problem**: Cosmos DB cost is rising due to ~2M large billing records (~300KB each), many of which are rarely accessed.
+- **Goal**: Archive older records (90+ days) to reduce cost while ensuring fast access when needed.
+- **Solution**: A serverless proxy architecture that:
+  - Uses Azure Functions to archive and retrieve records.
+  - Preserves existing APIs.
+  - Leverages Blob Storage's Cool/Archive tier.
 
 ---
 
@@ -29,7 +25,7 @@ The architecture comprises two main Azure Functions:
   Scheduled function that moves data older than 90 days from Cosmos DB to Blob Storage.
 
 - [`billing_records_retrieval`](azure-functions/billing_records_retrieval/)  
-  On-demand retrieval function that queries Cosmos DB or falls back to Blob Storage if the record is archived.
+  An on-demand retrieval function that queries Cosmos DB or falls back to Blob Storage if the record is archived.
 
 Infrastructure is provisioned using [Terraform](terraform/).
 
@@ -74,6 +70,13 @@ More details available in [docs/new_architecture.md](docs/new_architecture.md).
 
 ---
 
+## 📦 Terraform Overview
+- `main.tf`: Provisions function apps, storage, Cosmos DB, and required settings
+- `variables.tf`: Centralized configuration
+- `outputs.tf`: Exposes useful info like Function App URLs
+
+---
+
 ## 🚀 Getting Started
 ### ✅ Prerequisites
 - Azure CLI (az login)
@@ -87,6 +90,14 @@ terraform init
 terraform plan
 terraform apply
 ```
+This deploys:
+- Two Azure Function Apps
+- Storage account with two containers:
+  - archived → for old billing records
+  - logs → for archival logs
+- Cosmos DB instance
+- Application Insights
+
 > Make sure to configure `backend` and other environment-specific variables.
 
 ### ⚙️ Azure Functions Deployment
@@ -100,8 +111,18 @@ Repeat the same for billing_records_retrieval.
 
 ### 🧪 Example Usage
 - **Archival**: Triggered by a time-based schedule.
-- **Retrieval**: Queries Cosmos DB; if the record is archived, fetches from Blob Storage.
+- **Retrieval**: Queries Cosmos DB; fetches from Blob Storage if the record is archived.
 - Input/output formats can be defined in each function's README.
+
+---
+
+## ✅ Best Practices Followed
+- Zero downtime and backward-compatible API design
+- Data retention strategy with a delay before deletion
+- Logs all actions as function output stream
+- Infrastructure managed using Terraform
+- Separation of compute and storage for cost efficiency
+- Blob storage lifecycle tiers (Cool/Archive)
 
 ---
 
@@ -114,5 +135,11 @@ Repeat the same for billing_records_retrieval.
 
 ## ✅ To-Do / Enhancements
 - Add CI/CD pipeline (e.g., GitHub Actions or Azure Pipelines) for automated infra deployments.
-- Improve error handling & retry policies
-- Secret management for the sensitive data (eg. Azure Key Vault to store secrets)
+- create indexing for faster retrival from blob.
+- Improve error handling & retry policies.
+- Secret management for the sensitive data (eg. Azure Key Vault to store secrets).
+
+---
+
+## 🙋‍♂️ Maintainer
+Built with ❤️ by Shivam Gupta
