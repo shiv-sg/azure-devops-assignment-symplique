@@ -66,6 +66,19 @@ For a detailed view of the proposed architecture, refer to the [New Architecture
 
 ---
 
+## 💰 Storage Cost Comparison
+
+| Storage Type            | Price per GB/Month (approx.) | Usage Scenario              | Est. Monthly Cost (1 TB) |
+|-------------------------|------------------------------|-----------------------------|--------------------------|
+| **Azure Cosmos DB**     | ~$0.25 per GB                | Active records (< 90 days)  | ~$256                    |
+| **Blob Storage (Hot)**  | ~$0.0184 per GB              | Frequently accessed archive | ~$18.40                  |
+| **Blob Storage (Cool)** | ~$0.01 per GB                | Infrequently accessed data  | ~$10.00                  |
+| **Table Storage**       | ~$0.06 per GB                | Metadata & indexing         | ~$6.00                   |
+
+> **Result**: Moving 80% of data (~800 GB) from Cosmos DB to Blob/Cool reduces monthly storage cost from **$204 → ~$8–15**, saving **~90–95%**.
+
+---
+
 ## Pros and Cons
 
 ### Pros:
