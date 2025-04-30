@@ -1,0 +1,10 @@
+{
+  "bindings": [
+    {
+      "name": "mytimer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 0 2 * * *" // Runs daily at 2 AM UTC
+    }
+  ]
+}
