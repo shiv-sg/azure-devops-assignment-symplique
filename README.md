@@ -40,17 +40,23 @@ More details available in [docs/new_architecture.md](docs/new_architecture.md).
 ## 📁 Project Structure
 
 ```text
-azure-devops-assignment-symplique/
-├── azure-functions/
-│   ├── billing_records_archival/
-│   └── billing_records_retrieval/
-├── docs/
-│   ├── new_architecture.md
-│   └── new_architecture.png
-├── terraform/
+.
+├── terraform/                 # Infrastructure as Code (IaC)
 │   ├── main.tf
-│   ├── variables.tf
-│   └── outputs.tf
+│   ├── outputs.tf
+│   └── variables.tf
+|
+|── azure-functions/
+|   ├── billing_records_archival/   # Daily archiver function
+|   │   ├── function.json
+|   │   ├── __init__.py
+|   │   └── requirements.txt
+|   │
+|   └── billing_records_retrieval/  # HTTP retrieval function
+|       ├── function.json
+|       ├── __init__.py
+|       └── requirements.txt
+|
 ├── README.md
 └── chatgpt-prompt.md
 ```
@@ -69,14 +75,12 @@ azure-devops-assignment-symplique/
 ---
 
 ## 🚀 Getting Started
-###✅ Prerequisites
+### ✅ Prerequisites
 - Azure CLI (az login)
 - Terraform v1.0+
 - Python 3.10 with Azure Functions Core Tools
 
----
-
-## 🛠️ Infrastructure Deployment
+### 🛠️ Infrastructure Deployment
 ```bash
 cd terraform
 terraform init
@@ -85,9 +89,7 @@ terraform apply
 ```
 > Make sure to configure `backend` and other environment-specific variables.
 
----
-
-## ⚙️ Azure Functions Deployment
+### ⚙️ Azure Functions Deployment
 Install dependencies and publish:
 ```bash
 cd azure-functions/billing_records_archival
@@ -95,8 +97,6 @@ pip install -r requirements.txt
 func azure functionapp publish <your-function-app-name>
 ```
 Repeat the same for billing_records_retrieval.
-
----
 
 ### 🧪 Example Usage
 - **Archival**: Triggered by a time-based schedule.
@@ -113,6 +113,6 @@ Repeat the same for billing_records_retrieval.
 ---
 
 ## ✅ To-Do / Enhancements
-- Add CI/CD pipeline (e.g., GitHub Actions or Azure Pipelines)
+- Add CI/CD pipeline (e.g., GitHub Actions or Azure Pipelines) for automated infra deployments.
 - Improve error handling & retry policies
-- Parameterize archival threshold
+- Secret management for the sensitive data (eg. Azure Key Vault to store secrets)
