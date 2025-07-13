@@ -22,14 +22,14 @@ module "storage_account" {
 
 # Blob Containers
 module "archived_container" {
-  source               = "./modules/storage-container"
+  source               = "./modules/storage_container"
   name                 = "archived"
   storage_account_name = module.storage_account.name
   access_type          = "private"
 }
 
 module "logs_container" {
-  source               = "./modules/storage-container"
+  source               = "./modules/storage_container"
   name                 = "logs"
   storage_account_name = module.storage_account.name
   access_type          = "private"
@@ -37,20 +37,20 @@ module "logs_container" {
 
 # Application Insights
 module "application_insights" {
-  source              = "./modules/application-insights"
+  source              = "./modules/application_insights"
   name                = "billing-insights"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
   application_type    = "web"
   tags                = var.common_tags
 }
 
 # Function App - Retrieval API (HTTP Trigger)
 module "billing_retrieval_function_app" {
-  source                     = "./modules/function-app"
+  source                     = "./modules/function_app"
   name                       = "billing-retrieval-api"
-  location                   = azurerm_resource_group.main.location
-  resource_group_name        = azurerm_resource_group.main.name
+  location                   = azurerm_resource_group.rg.location
+  resource_group_name        = azurerm_resource_group.rg.name
   storage_account_name       = module.storage_account.name
   storage_account_access_key = module.storage_account.primary_access_key
   app_settings = {
@@ -65,10 +65,10 @@ module "billing_retrieval_function_app" {
 
 # Function App - Archiver Job (Timer Trigger)
 module "billing_archiver_function_app" {
-  source                     = "./modules/function-app"
+  source                     = "./modules/function_app"
   name                       = "billing-archiver-job"
-  location                   = azurerm_resource_group.main.location
-  resource_group_name        = azurerm_resource_group.main.name
+  location                   = azurerm_resource_group.rg.location
+  resource_group_name        = azurerm_resource_group.rg.name
   storage_account_name       = module.storage_account.name
   storage_account_access_key = module.storage_account.primary_access_key
   app_settings = {
