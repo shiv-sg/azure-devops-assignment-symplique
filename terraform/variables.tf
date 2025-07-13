@@ -8,3 +8,12 @@ variable "location" {
   # https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/azure-regions
   default = "East US"
 }
+
+variable "common_tags" {
+  type = map(string)
+  default = {
+    Environment = "Prod"
+    Project     = "Billing System"
+    Owner       = "DevOps Team"
+  }
+}

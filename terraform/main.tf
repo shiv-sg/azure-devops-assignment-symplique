@@ -2,94 +2,82 @@ provider "azurerm" {
   features {}
 }
 
-resource "azurerm_resource_group" "main" {
+resource "azurerm_resource_group" "rg" {
   name     = "rg-billing-system"
   location = "East US"
-}
-
-# Storage Account
-resource "azurerm_storage_account" "main" {
-  name                     = "billingstore${random_id.unique.hex}"
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = azurerm_resource_group.main.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
 }
 
 resource "random_id" "unique" {
   byte_length = 4
 }
 
+# Storage Account
+module "storage_account" {
+  source              = "./modules/storage_account"
+  name                = "billingstorage${random_id.unique.hex}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = var.common_tags
+}
+
 # Blob Containers
-resource "azurerm_storage_container" "archived" {
-  name                  = "archived"
-  storage_account_name  = azurerm_storage_account.main.name
-  container_access_type = "private"
+module "archived_container" {
+  source               = "./modules/storage-container"
+  name                 = "archived"
+  storage_account_name = module.storage_account.name
+  access_type          = "private"
 }
 
-resource "azurerm_storage_container" "logs" {
-  name                  = "logs"
-  storage_account_name  = azurerm_storage_account.main.name
-  container_access_type = "private"
-}
-
-# App Service Plan
-resource "azurerm_app_service_plan" "main" {
-  name                = "billing-functions-plan"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  kind                = "FunctionApp"
-  reserved            = true
-
-  sku {
-    tier = "Dynamic"
-    size = "Y1"
-  }
+module "logs_container" {
+  source               = "./modules/storage-container"
+  name                 = "logs"
+  storage_account_name = module.storage_account.name
+  access_type          = "private"
 }
 
 # Application Insights
-resource "azurerm_application_insights" "main" {
+module "application_insights" {
+  source              = "./modules/application-insights"
   name                = "billing-insights"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   application_type    = "web"
+  tags                = var.common_tags
 }
 
 # Function App - Retrieval API (HTTP Trigger)
-resource "azurerm_function_app" "retrieval_api" {
+module "billing_retrieval_function_app" {
+  source                     = "./modules/function-app"
   name                       = "billing-retrieval-api"
   location                   = azurerm_resource_group.main.location
   resource_group_name        = azurerm_resource_group.main.name
-  app_service_plan_id        = azurerm_app_service_plan.main.id
-  storage_account_name       = azurerm_storage_account.main.name
-  storage_account_access_key = azurerm_storage_account.main.primary_access_key
-  version                    = "~4"
-
+  storage_account_name       = module.storage_account.name
+  storage_account_access_key = module.storage_account.primary_access_key
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME    = "python"
-    APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.main.instrumentation_key
-    AzureWebJobsStorage         = azurerm_storage_account.main.primary_connection_string
-    BLOB_CONTAINER_ARCHIVE      = azurerm_storage_container.archived.name
-    BLOB_CONTAINER_LOGS         = azurerm_storage_container.logs.name
+    APPINSIGHTS_INSTRUMENTATIONKEY = module.application_insights.instrumentation_key
+    AzureWebJobsStorage            = module.storage_account.primary_connection_string
+    BLOB_CONTAINER_ARCHIVE         = module.archived_container.name
+    BLOB_CONTAINER_LOGS            = module.logs_container.name
   }
+
+  tags = var.common_tags
 }
 
 # Function App - Archiver Job (Timer Trigger)
-resource "azurerm_function_app" "archiver_job" {
+module "billing_archiver_function_app" {
+  source                     = "./modules/function-app"
   name                       = "billing-archiver-job"
   location                   = azurerm_resource_group.main.location
   resource_group_name        = azurerm_resource_group.main.name
-  app_service_plan_id        = azurerm_app_service_plan.main.id
-  storage_account_name       = azurerm_storage_account.main.name
-  storage_account_access_key = azurerm_storage_account.main.primary_access_key
-  version                    = "~4"
-
+  storage_account_name       = module.storage_account.name
+  storage_account_access_key = module.storage_account.primary_access_key
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME    = "python"
-    APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.main.instrumentation_key
-    AzureWebJobsStorage         = azurerm_storage_account.main.primary_connection_string
-    BLOB_CONTAINER_ARCHIVE      = azurerm_storage_container.archived.name
-    BLOB_CONTAINER_LOGS         = azurerm_storage_container.logs.name
-    ARCHIVAL_SCHEDULE_CRON      = "0 0 2 * * *"  # daily 2am UTC
+    APPINSIGHTS_INSTRUMENTATIONKEY = module.application_insights.instrumentation_key
+    AzureWebJobsStorage            = module.storage_account.primary_connection_string
+    BLOB_CONTAINER_ARCHIVE         = module.archived_container.name
+    BLOB_CONTAINER_LOGS            = module.logs_container.name
+    ARCHIVAL_SCHEDULE_CRON         = "0 0 2 * * *" # daily 2am UTC
   }
+
+  tags = var.common_tags
 }
