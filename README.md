@@ -103,11 +103,15 @@ This deploys:
 ### ⚙️ Azure Functions Deployment
 Install dependencies and publish:
 ```bash
-cd azure-functions/billing_records_archival
 pip install -r requirements.txt
+cd azure-functions/billing_records_archival
 func azure functionapp publish <your-function-app-name>
 ```
 Repeat the same for billing_records_retrieval.
+
+> **Note:**  
+> The code provided in the `azure-functions` folders is **pseudocode** and serves as a template or reference.  
+> You will need to implement the actual logic and configure the functions before deploying to Azure.
 
 ### 🧪 Example Usage
 - **Archival**: Triggered by a time-based schedule.
